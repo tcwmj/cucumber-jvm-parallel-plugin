@@ -14,7 +14,7 @@ Add the following to your POM file:
 
 ```xml
 <plugin>
-  <groupId>com.github.temyers</groupId>
+  <groupId>org.yiwan</groupId>
   <artifactId>cucumber-jvm-parallel-plugin</artifactId>
   <version>1.1.0-SNAPSHOT</version>
   <executions>
