@@ -1,3 +1,5 @@
+package $feature;
+
 import org.junit.runner.RunWith;
 
 import cucumber.api.CucumberOptions;
@@ -6,9 +8,10 @@ import cucumber.api.junit.Cucumber;
 @RunWith(Cucumber.class)
 @CucumberOptions(strict = $strict,
     features = {"classpath:$featureFile"},
-    format = {$reports, "pretty"},
+    plugin = {$reports, "pretty"},
     monochrome = ${monochrome},
     tags = {$tags},
-    glue = { $glue })
-public class Parallel${fileCounter}IT {
+    glue = { $glue },
+    name = {$scenario})
+public class ${classname} {
 }

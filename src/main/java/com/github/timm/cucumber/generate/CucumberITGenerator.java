@@ -1,26 +1,32 @@
 package com.github.timm.cucumber.generate;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
-import java.util.Collection;
-import java.util.List;
-import java.util.Properties;
-
+import com.github.timm.cucumber.options.TagParser;
+import com.google.common.base.CaseFormat;
+import org.apache.commons.io.FileExistsException;
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 
-import com.github.timm.cucumber.options.TagParser;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class CucumberITGenerator {
 
     private final FileGeneratorConfig config;
     private final OverriddenCucumberOptionsParameters overriddenParameters;
-    int fileCounter = 1;
+    String feature;
+    String scenario;
+    String classname;
     private String featureFileLocation;
     private Template velocityTemplate;
 
@@ -37,12 +43,12 @@ public class CucumberITGenerator {
                 "org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader");
         final VelocityEngine engine = new VelocityEngine(props);
         engine.init();
-        if (config.useTestNG()){
+        if (config.useTestNG()) {
             velocityTemplate = engine.getTemplate("cucumber-testng-runner.vm",
-                                                  config.getEncoding());
+                    config.getEncoding());
         } else {
             velocityTemplate = engine.getTemplate("cucumber-junit-runner.vm",
-                                                  config.getEncoding());
+                    config.getEncoding());
         }
     }
 
@@ -54,30 +60,50 @@ public class CucumberITGenerator {
                 continue;
             }
 
-            final String outputFileName = String.format("Parallel%02dIT.java",
-                    fileCounter);
+            feature = file.getName().toLowerCase().replace(".feature", "");
+            final String outputFolderName = feature;
+            final File outputFolder = new File(outputDirectory, outputFolderName);
+            outputFolder.mkdirs();
+            List<String> scenarioNames = getAllScenarioNames(file);
+            for (String scenarioName : scenarioNames) {
+                scenario = String.format("\"^%s$\"", scenarioName);
+                classname = filterString(CaseFormat.LOWER_HYPHEN.to(CaseFormat.UPPER_CAMEL, scenarioName.toLowerCase().replace(" ", "-")));
 
-            setFeatureFileLocation(file);
+                String outputFileName = String.format("%s.java",
+                        classname);
 
-            final File outputFile = new File(outputDirectory, outputFileName);
-            FileWriter w = null;
-            try {
-                w = new FileWriter(outputFile);
-                writeContentFromTemplate(w);
-            } catch (final IOException e) {
-                throw new MojoExecutionException("Error creating file "
-                        + outputFile, e);
-            } finally {
-                if (w != null) {
+                setFeatureFileLocation(file);
+
+                File outputFile = new File(outputFolder, outputFileName);
+                // to avoide file name conflicts
+//                int i = 0;
+//                while (outputFile.exists()){
+//                    outputFile = new File(outputFolder, outputFileName + i++);
+//                }
+                if (outputFile.exists()){
                     try {
-                        w.close();
-                    } catch (final IOException e) {
-                        // ignore
+                        throw new FileExistsException(String.format("duplicate scenario name [%s] found in feature [%s]", scenarioName, feature));
+                    } catch (FileExistsException e) {
+                        e.printStackTrace();
+                    }
+                }
+                FileWriter w = null;
+                try {
+                    w = new FileWriter(outputFile);
+                    writeContentFromTemplate(w);
+                } catch (final IOException e) {
+                    throw new MojoExecutionException("Error creating file "
+                            + outputFile, e);
+                } finally {
+                    if (w != null) {
+                        try {
+                            w.close();
+                        } catch (final IOException e) {
+                            // ignore
+                        }
                     }
                 }
             }
-
-            fileCounter++;
         }
     }
 
@@ -92,7 +118,7 @@ public class CucumberITGenerator {
             } catch (final IOException e) {
                 config.getLog().info(
                         "Failed to read contents of " + file.getPath()
-                        + ". Parallel Test shall be created.");
+                                + ". Parallel Test shall be created.");
             }
         }
         return false;
@@ -115,7 +141,7 @@ public class CucumberITGenerator {
     }
 
     private boolean fileContainsAnyTags(final String fileContents,
-            final List<String> tags) {
+                                        final List<String> tags) {
 
         for (final String tag : tags) {
 
@@ -141,8 +167,7 @@ public class CucumberITGenerator {
      * /myproject/src/test/resources/features/feature1.feature will be saved as
      * features/feature1.feature
      *
-     * @param file
-     *            The feature file
+     * @param file The feature file
      */
     private void setFeatureFileLocation(final File file) {
         final File featuresDirectory = config.getFeaturesDirectory();
@@ -150,20 +175,22 @@ public class CucumberITGenerator {
                 .getPath()
                 .replace(featuresDirectory.getPath(),
                         featuresDirectory.getName())
-                        .replace(File.separatorChar, '/');
+                .replace(File.separatorChar, '/');
     }
 
     private void writeContentFromTemplate(final Writer writer) {
 
         final VelocityContext context = new VelocityContext();
+        context.put("feature", feature);
         context.put("strict", overriddenParameters.isStrict());
         context.put("featureFile", featureFileLocation);
         context.put("reports", createFormatStrings());
-        context.put("fileCounter", String.format("%02d", fileCounter));
         context.put("tags", overriddenParameters.getTags());
         context.put("monochrome", overriddenParameters.isMonochrome());
         context.put("cucumberOutputDir", config.getCucumberOutputDir());
         context.put("glue", quoteGlueStrings());
+        context.put("scenario", scenario);
+        context.put("classname", classname);
 
         velocityTemplate.merge(context, writer);
     }
@@ -178,9 +205,9 @@ public class CucumberITGenerator {
 
         for (int i = 0; i < formatStrs.length; i++) {
             final String formatStr = formatStrs[i].trim();
-            sb.append(String.format("\"%s:%s/%s.%s\"", formatStr,
+            sb.append(String.format("\"%s:%s/%s;%s.%s\"", formatStr,
                     config.getCucumberOutputDir()
-                    .replace('\\', '/'), fileCounter, formatStr));
+                            .replace('\\', '/'), feature, CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_HYPHEN, classname), formatStr));
 
             if (i < formatStrs.length - 1) {
                 sb.append(", ");
@@ -206,6 +233,34 @@ public class CucumberITGenerator {
             }
         }
         return sb.toString();
+    }
+
+    private List<String> getAllScenarioNames(File file) {
+        List<String> lines = null;
+        try {
+            lines = FileUtils.readLines(file);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Pattern pattern = Pattern.compile("^Scenario( Outline)?:(.*)");
+        List<String> list = new ArrayList<String>();
+        for (String line : lines) {
+            Matcher matcher = pattern.matcher(line.trim());
+            if (matcher.find()) {
+                list.add(matcher.group(2).trim());
+            }
+        }
+        return list;
+    }
+
+    private String filterString(String str){
+        // 只允许字母和数字
+        String regEx = "[^a-zA-Z0-9]";
+        // 清除掉所有特殊字符
+//		String regEx = "[`~!@#$%^&*()+=|{}':;',\\[\\].<>/?~！@#￥%……&*（）——+|{}【】‘；：”“’。，、？]";
+        Pattern p = Pattern.compile(regEx);
+        Matcher m = p.matcher(str);
+        return m.replaceAll("").trim();
     }
 
 }
