@@ -1,5 +1,3 @@
-package $feature;
-
 import cucumber.api.CucumberOptions;
 import cucumber.api.testng.AbstractTestNGCucumberTests;
 
@@ -8,7 +6,6 @@ import cucumber.api.testng.AbstractTestNGCucumberTests;
     plugin = {$reports, "pretty"},
     monochrome = ${monochrome},
     tags = {$tags},
-    glue = { $glue },
-    name = {$scenario})
-public class ${classname} extends AbstractTestNGCucumberTests {
+    glue = { $glue })
+public class $feature extends AbstractTestNGCucumberTests {
 }

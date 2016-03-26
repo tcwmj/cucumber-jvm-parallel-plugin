@@ -1,8 +1,6 @@
 package com.github.timm.cucumber.generate;
 
 import com.github.timm.cucumber.options.TagParser;
-import com.google.common.base.CaseFormat;
-import org.apache.commons.io.FileExistsException;
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.velocity.Template;
@@ -13,20 +11,15 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class CucumberITGenerator {
 
     private final FileGeneratorConfig config;
     private final OverriddenCucumberOptionsParameters overriddenParameters;
     String feature;
-    String scenario;
-    String classname;
     private String featureFileLocation;
     private Template velocityTemplate;
 
@@ -60,47 +53,27 @@ public class CucumberITGenerator {
                 continue;
             }
 
-            feature = file.getName().toLowerCase().replace(".feature", "");
-            final String outputFolderName = feature;
-            final File outputFolder = new File(outputDirectory, outputFolderName);
-            outputFolder.mkdirs();
-            List<String> scenarioNames = getAllScenarioNames(file);
-            for (String scenarioName : scenarioNames) {
-                scenario = String.format("\"^%s$\"", scenarioName);
-                classname = filterString(CaseFormat.LOWER_HYPHEN.to(CaseFormat.UPPER_CAMEL, scenarioName.toLowerCase().replace(" ", "-")));
+            feature = (file.getName().substring(0, 1).toUpperCase() + file.getName().substring(1)).replace(".feature", "");
 
-                String outputFileName = String.format("%s.java",
-                        classname);
+            String outputFileName = String.format("%s.java",
+                    feature);
 
-                setFeatureFileLocation(file);
+            setFeatureFileLocation(file);
 
-                File outputFile = new File(outputFolder, outputFileName);
-                // to avoide file name conflicts
-//                int i = 0;
-//                while (outputFile.exists()){
-//                    outputFile = new File(outputFolder, outputFileName + i++);
-//                }
-                if (outputFile.exists()){
+            File outputFile = new File(outputDirectory, outputFileName);
+            FileWriter w = null;
+            try {
+                w = new FileWriter(outputFile);
+                writeContentFromTemplate(w);
+            } catch (final IOException e) {
+                throw new MojoExecutionException("Error creating file "
+                        + outputFile, e);
+            } finally {
+                if (w != null) {
                     try {
-                        throw new FileExistsException(String.format("duplicate scenario name [%s] found in feature [%s]", scenarioName, feature));
-                    } catch (FileExistsException e) {
-                        e.printStackTrace();
-                    }
-                }
-                FileWriter w = null;
-                try {
-                    w = new FileWriter(outputFile);
-                    writeContentFromTemplate(w);
-                } catch (final IOException e) {
-                    throw new MojoExecutionException("Error creating file "
-                            + outputFile, e);
-                } finally {
-                    if (w != null) {
-                        try {
-                            w.close();
-                        } catch (final IOException e) {
-                            // ignore
-                        }
+                        w.close();
+                    } catch (final IOException e) {
+                        // ignore
                     }
                 }
             }
@@ -189,8 +162,6 @@ public class CucumberITGenerator {
         context.put("monochrome", overriddenParameters.isMonochrome());
         context.put("cucumberOutputDir", config.getCucumberOutputDir());
         context.put("glue", quoteGlueStrings());
-        context.put("scenario", scenario);
-        context.put("classname", classname);
 
         velocityTemplate.merge(context, writer);
     }
@@ -205,9 +176,9 @@ public class CucumberITGenerator {
 
         for (int i = 0; i < formatStrs.length; i++) {
             final String formatStr = formatStrs[i].trim();
-            sb.append(String.format("\"%s:%s/%s;%s.%s\"", formatStr,
+            sb.append(String.format("\"%s:%s/%s.%s\"", formatStr,
                     config.getCucumberOutputDir()
-                            .replace('\\', '/'), feature, CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_HYPHEN, classname), formatStr));
+                            .replace('\\', '/'), feature, formatStr));
 
             if (i < formatStrs.length - 1) {
                 sb.append(", ");
@@ -234,33 +205,4 @@ public class CucumberITGenerator {
         }
         return sb.toString();
     }
-
-    private List<String> getAllScenarioNames(File file) {
-        List<String> lines = null;
-        try {
-            lines = FileUtils.readLines(file);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        Pattern pattern = Pattern.compile("^Scenario( Outline)?:(.*)");
-        List<String> list = new ArrayList<String>();
-        for (String line : lines) {
-            Matcher matcher = pattern.matcher(line.trim());
-            if (matcher.find()) {
-                list.add(matcher.group(2).trim());
-            }
-        }
-        return list;
-    }
-
-    private String filterString(String str){
-        // 只允许字母和数字
-        String regEx = "[^a-zA-Z0-9]";
-        // 清除掉所有特殊字符
-//		String regEx = "[`~!@#$%^&*()+=|{}':;',\\[\\].<>/?~！@#￥%……&*（）——+|{}【】‘；：”“’。，、？]";
-        Pattern p = Pattern.compile(regEx);
-        Matcher m = p.matcher(str);
-        return m.replaceAll("").trim();
-    }
-
 }
