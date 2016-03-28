@@ -164,6 +164,7 @@ public class CucumberITGenerator {
         context.put("monochrome", overriddenParameters.isMonochrome());
         context.put("cucumberOutputDir", config.getCucumberOutputDir());
         context.put("glue", quoteGlueStrings());
+        context.put("testNGSuperClass", config.getTestNGSuperClass());
 
         velocityTemplate.merge(context, writer);
     }

@@ -110,6 +110,9 @@ public class GenerateRunnersMojo extends AbstractMojo implements FileGeneratorCo
     @Parameter(defaultValue = "false", property = "useTestNG", required = true)
     private boolean useTestNG;
 
+    @Parameter(defaultValue = "cucumber.api.testng.AbstractTestNGCucumberTests", property = "testNGSuperClass", required = true)
+    private String testNGSuperClass;
+
     /**
      * @see CucumberOptions
      */
@@ -187,5 +190,8 @@ public class GenerateRunnersMojo extends AbstractMojo implements FileGeneratorCo
         return useTestNG;
     }
 
+    public String getTestNGSuperClass() {
+        return testNGSuperClass;
+    }
 
 }
