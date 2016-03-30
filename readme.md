@@ -46,8 +46,10 @@ Add the following to your POM file:
          <!-- If set to true, only feature files containing the required tags shall be generated. -->
          <!-- Excluded tags (~@notMe) are ignored. -->
          <filterFeaturesByTags>false</filterFeaturesByTags>
-         <!-- Generate TestNG runners instead of JUnit ones. --> 
-         <useTestNG>false</useTestNG>
+         <!-- Generate TestNG runners instead of JUnit ones. -->
+         <useTestNG>true</useTestNG>
+         <!--cucumber TestNG super test class, default value is cucumber.api.testng.AbstractTestNGCucumberTests-->
+         <testNGSuperClass>cucumber.api.testng.AbstractTestNGCucumberTests</testNGSuperClass>
       </configuration>
     </execution>
   </executions>
@@ -74,6 +76,8 @@ Changelog
 1.1.0
 -----
 * pr#13 - Added support for generating TestNG runners.
+* pr#14 - Added support for generating TestNG runners with name from counter to the same feature file name in Camel case.
+* pr#15 - Added support for generating TestNG runners with specified super testng class.
 
 1.0.1
 -----
