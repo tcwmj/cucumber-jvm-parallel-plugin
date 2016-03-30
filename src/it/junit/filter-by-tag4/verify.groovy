@@ -1,7 +1,7 @@
 import org.junit.Assert;
 
-File suite01 = new File( basedir, "target/generated-test-sources/cucumber/Parallel01IT.java" );
-File suite02 = new File( basedir, "target/generated-test-sources/cucumber/Parallel02IT.java" );
+File suite01 = new File( basedir, "target/generated-test-sources/cucumber/Feature1.java" );
+File suite02 = new File( basedir, "target/generated-test-sources/cucumber/Feature2.java" );
 File suite03 = new File( basedir, "target/generated-test-sources/cucumber/Parallel03IT.java" );
 
 assert suite01.isFile()
