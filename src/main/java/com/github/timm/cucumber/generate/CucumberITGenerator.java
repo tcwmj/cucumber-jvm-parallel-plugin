@@ -1,5 +1,12 @@
 package com.github.timm.cucumber.generate;
 
+import com.github.timm.cucumber.options.TagParser;
+import org.apache.commons.io.FileUtils;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.velocity.Template;
+import org.apache.velocity.VelocityContext;
+import org.apache.velocity.app.VelocityEngine;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -7,14 +14,6 @@ import java.io.Writer;
 import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.velocity.Template;
-import org.apache.velocity.VelocityContext;
-import org.apache.velocity.app.VelocityEngine;
-
-import com.github.timm.cucumber.options.TagParser;
 
 public class CucumberITGenerator {
 
@@ -37,12 +36,12 @@ public class CucumberITGenerator {
                 "org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader");
         final VelocityEngine engine = new VelocityEngine(props);
         engine.init();
-        if (config.useTestNG()){
+        if (config.useTestNG()) {
             velocityTemplate = engine.getTemplate("cucumber-testng-runner.vm",
-                                                  config.getEncoding());
+                    config.getEncoding());
         } else {
             velocityTemplate = engine.getTemplate("cucumber-junit-runner.vm",
-                                                  config.getEncoding());
+                    config.getEncoding());
         }
     }
 
@@ -92,7 +91,7 @@ public class CucumberITGenerator {
             } catch (final IOException e) {
                 config.getLog().info(
                         "Failed to read contents of " + file.getPath()
-                        + ". Parallel Test shall be created.");
+                                + ". Parallel Test shall be created.");
             }
         }
         return false;
@@ -115,7 +114,7 @@ public class CucumberITGenerator {
     }
 
     private boolean fileContainsAnyTags(final String fileContents,
-            final List<String> tags) {
+                                        final List<String> tags) {
 
         for (final String tag : tags) {
 
@@ -141,8 +140,7 @@ public class CucumberITGenerator {
      * /myproject/src/test/resources/features/feature1.feature will be saved as
      * features/feature1.feature
      *
-     * @param file
-     *            The feature file
+     * @param file The feature file
      */
     private void setFeatureFileLocation(final File file) {
         final File featuresDirectory = config.getFeaturesDirectory();
@@ -150,7 +148,7 @@ public class CucumberITGenerator {
                 .getPath()
                 .replace(featuresDirectory.getPath(),
                         featuresDirectory.getName())
-                        .replace(File.separatorChar, '/');
+                .replace(File.separatorChar, '/');
     }
 
     private void writeContentFromTemplate(final Writer writer) {
@@ -179,14 +177,17 @@ public class CucumberITGenerator {
 
         for (int i = 0; i < formatStrs.length; i++) {
             final String formatStr = formatStrs[i].trim();
-            sb.append(String.format("\"%s:%s/%s.%s\"", formatStr,
-                    config.getCucumberOutputDir()
-                            .replace('\\', '/'), feature, formatStr));
+            sb.append(String.format("\"%s:%s/%s", formatStr, config.getCucumberOutputDir().replace('\\', '/'), feature));
+            if (!formatStr.toLowerCase().equals("html")) {
+                sb.append(String.format(".%s", formatStr));
+            }
+            sb.append("\"");
 
             if (i < formatStrs.length - 1) {
                 sb.append(", ");
             }
         }
+
         return sb.toString();
     }
 
