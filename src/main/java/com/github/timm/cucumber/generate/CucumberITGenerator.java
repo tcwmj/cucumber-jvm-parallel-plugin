@@ -178,8 +178,10 @@ public class CucumberITGenerator {
         for (int i = 0; i < formatStrs.length; i++) {
             final String formatStr = formatStrs[i].trim();
             sb.append(String.format("\"%s:%s/%s/%s", formatStr, config.getCucumberOutputDir().replace('\\', '/'), formatStr, feature));
-            if (!formatStr.toLowerCase().equals("html")) {
+            if (formatStr.toLowerCase().equals("json")) {
                 sb.append(String.format(".%s", formatStr));
+            } else if (formatStr.toLowerCase().equals("rerun")) {
+                sb.append(String.format(".%s", "txt"));
             }
             sb.append("\"");
 
