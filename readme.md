@@ -14,45 +14,45 @@ Add the following to your POM file:
 
 ```xml
 <plugin>
-  <groupId>org.yiwan</groupId>
-  <artifactId>cucumber-jvm-parallel-plugin</artifactId>
-  <version>1.1.0-SNAPSHOT</version>
-  <executions>
-    <execution>
-      <id>generateRunners</id>
-      <phase>validate</phase>
-      <goals>
-        <goal>generateRunners</goal>
-      </goals>
-      <configuration>
-          <!-- Mandatory -->
-          <!-- comma separated list of package names to scan for glue code -->
-         <glue>foo, bar</glue>
-         <!-- These are the default values -->
-          <!-- Where to output the generated tests -->
-           <outputDirectory>${project.build.directory}/generated-test-sources/cucumber</outputDirectory>
-           <!-- The diectory containing your feature files.  -->
-          <featuresDirectory>src/test/resources/features/</featuresDirectory>
-           <!-- Directory where the cucumber report files shall be written  -->
-          <cucumberOutputDir>target/cucumber-parallel</cucumberOutputDir>
-          <!-- comma separated list of output formats -->
-         <format>json</format>
-         <!-- CucumberOptions.strict property -->
-         <strict>true</strict>
-         <!-- CucumberOptions.monochrome property -->
-         <monochrome>true</monochrome>
-         <!-- The tags to run, maps to CucumberOptions.tags property -->
-         <tags>"@complete", "@accepted"</tags>
-         <!-- If set to true, only feature files containing the required tags shall be generated. -->
-         <!-- Excluded tags (~@notMe) are ignored. -->
-         <filterFeaturesByTags>false</filterFeaturesByTags>
-         <!-- Generate TestNG runners instead of JUnit ones. -->
-         <useTestNG>true</useTestNG>
-         <!--cucumber TestNG super test class, default value is cucumber.api.testng.AbstractTestNGCucumberTests-->
-         <testNGSuperClass>cucumber.api.testng.AbstractTestNGCucumberTests</testNGSuperClass>
-      </configuration>
-    </execution>
-  </executions>
+    <groupId>org.yiwan</groupId>
+    <artifactId>cucumber-jvm-parallel-plugin</artifactId>
+    <version>${cucumber.jvm.parallel.plugin.version}</version>
+    <executions>
+        <execution>
+            <id>generateRunners</id>
+            <phase>validate</phase>
+            <goals>
+                <goal>generateRunners</goal>
+            </goals>
+            <configuration>
+                <!-- Mandatory -->
+                <!-- comma separated list of package names to scan for glue code -->
+                <glue>com.lombardrisk.glue.hooks,com.lombardrisk.glue.steps</glue>
+                <!-- These are the default values -->
+                <!-- Where to output the generated tests -->
+                <outputDirectory>${project.build.directory}/generated-test-sources/cucumber</outputDirectory>
+                <!-- The directory containing your feature files.  -->
+                <featuresDirectory>src/test/resources/features/</featuresDirectory>
+                <!-- Directory where the cucumber report files shall be written  -->
+                <cucumberOutputDir>${project.build.directory}/result/cucumber-reports</cucumberOutputDir>
+                <!-- comma separated list of output formats -->
+                <format>json,html,rerun</format>
+                <!-- CucumberOptions.strict property -->
+                <strict>true</strict>
+                <!-- CucumberOptions.monochrome property -->
+                <monochrome>true</monochrome>
+                <!-- The tags to run, maps to CucumberOptions.tags property -->
+                <tags>"~@manual", "~@deprecated", "~@todo", "~@wip", "~@ignore"</tags>
+                <!-- If set to true, only feature files containing the required tags shall be generated. -->
+                <!-- Excluded tags (~@notMe) are ignored. -->
+                <filterFeaturesByTags>true</filterFeaturesByTags>
+                <!-- Generate TestNG runners instead of JUnit ones. -->
+                <useTestNG>true</useTestNG>
+                <!--cucumber TestNG super test class, default value is cucumber.api.testng.AbstractTestNGCucumberTests-->
+                <testNGSuperClass>cucumber.api.testng.AbstractTestNGCucumberTests</testNGSuperClass>
+            </configuration>
+        </execution>
+    </executions>
 </plugin>
 ```
 
